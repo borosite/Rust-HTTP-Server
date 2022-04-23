@@ -1,3 +1,5 @@
+use std::net::TcpListener;
+
 pub struct HttpServer {
     address: String
 }
@@ -11,5 +13,7 @@ impl HttpServer {
 
     pub fn run(self) {
         println!("Running on {}", self.address);
+
+        let listener = TcpListener::bind(&self.address).unwrap(); //failing a bind is a recoverable error, but we want to stop our program if the address is already being used. Unwrap does that for you, makes this unrecoverable if in case of an error.
     }
 }
