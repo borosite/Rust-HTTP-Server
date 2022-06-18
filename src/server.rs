@@ -27,14 +27,20 @@ impl HttpServer {
                         Ok(_) => {
                             println!("Received a request: {}", String::from_utf8_lossy(&buffer));
 
-                            match Request::try_from(&buffer[..]){   //or it can be like &buffer as &[u8], that will simply convert. [..] this is essentially slice with no bounds, so byte slice that contains whole array
+                            let response = match Request::try_from(&buffer[..]){   //or it can be like &buffer as &[u8], that will simply convert. [..] this is essentially slice with no bounds, so byte slice that contains whole array
                                 Ok(request) => {
                                     dbg!(request);
-                                    let response = Response::new(StatusCode::Ok, Some("<h1>Basic HTML Text</h1>".to_string()));
-                                    write!(stream, "{}", response);
+                                    Response::new(StatusCode::Ok, Some("<h1>Basic HTML Text</h1>".to_string()))
                                 },
-                                Err(e) => println!("Failed to parse the request: {}", e)
-                            } 
+                                Err(e) => {
+                                    println!("Failed to parse the request: {}", e);
+                                    Response::new(StatusCode::BadRequest, None)
+                                }
+                            };
+
+                            if let Err(e) = response.send(&mut stream) {    //reducing redundancy of .send
+                                println!("Failed to send response: {}", e);
+                            }
                         },
                         Err(_) => {println!("Failed to read from buffer")}
                     }
