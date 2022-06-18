@@ -14,9 +14,9 @@ impl Response {
         Response {status_code, body}
     }
 
-    pub fn send(&self, stream: &mut TcpStream) -> IoResult<()> {    //writing to the TcpStream directly, unlike using formatter like before
+    pub fn send(&self, stream: &mut impl Write) -> IoResult<()> {    //writing it to Write as opposed to TcpStream from before to make it more generic and flexible. As it has many impls, dynamic dispatch is used i.e. impl will be resolved during runtime generating V tables, to avoid that happening at compile time we use static dispatch, i.e. impl keyword leads to no V tables no runtime cost
         let body = match &self.body {   //because the body can be quite large, having that big data in the buffer would mean trouble
-            Some(b) => b,
+            Some(b) => b,   //so static dp makes compilation slower, and the binaries larger as it has to generate several copies of functions
             None => ""
         };
         
