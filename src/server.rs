@@ -1,7 +1,15 @@
-use crate::http::{Request, Response, StatusCode};
+use crate::http::{Request, Response, StatusCode, ParseError};
 use std::net::TcpListener;
 use std::io::{Read, Write};
 use std::convert::TryFrom;
+
+pub trait Handler {
+    fn handle_request(&mut self, request: &Request)  -> Response;
+    fn handle_bad_request(&mut self, e: &ParseError)  -> Response {
+        println!("Failed to parse request: {}", e);
+        Response::new(StatusCode::BadRequest, None)
+    }
+}
 
 pub struct HttpServer {
     address: String
@@ -14,7 +22,7 @@ impl HttpServer {
         }
     }
 
-    pub fn run(self) {
+    pub fn run(self, mut handler: impl Handler) {
         println!("Running on {}", self.address);
 
         let listener = TcpListener::bind(&self.address).unwrap(); //failing a bind is a recoverable error, but we want to stop our program if the address is already being used. Unwrap does that for you, makes this unrecoverable if in case of an error.
@@ -29,12 +37,10 @@ impl HttpServer {
 
                             let response = match Request::try_from(&buffer[..]){   //or it can be like &buffer as &[u8], that will simply convert. [..] this is essentially slice with no bounds, so byte slice that contains whole array
                                 Ok(request) => {
-                                    dbg!(request);
-                                    Response::new(StatusCode::Ok, Some("<h1>Basic HTML Text</h1>".to_string()))
+                                    handler.handle_request(&request)
                                 },
                                 Err(e) => {
-                                    println!("Failed to parse the request: {}", e);
-                                    Response::new(StatusCode::BadRequest, None)
+                                    handler.handle_bad_request(&e)
                                 }
                             };
 

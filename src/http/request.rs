@@ -13,6 +13,20 @@ pub struct Request<'buf> {    //specifying lifetime.. and yup that's the syntax,
     method: Method
 }
 
+impl<'buf> Request<'buf> {
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    pub fn method(&self) -> &Method {
+        &self.method
+    }
+
+    pub fn query_string(&self) -> Option<&QueryString> {
+        self.query_string.as_ref()
+    }
+}
+
 impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {  //you don't have to mention lifetimes while calling, it stays here as metadata
     type Error = ParseError;
 
