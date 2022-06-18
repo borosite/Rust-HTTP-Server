@@ -5,17 +5,17 @@ use std::fmt::{Display, Formatter, Result as FmtResult, Debug};
 use std::str;
 use std::str::Utf8Error;
 
-pub struct Request {
-    path: String,
-    query_string: Option<String>,
+pub struct Request<'buf> {    //specifying lifetime.. and yup that's the syntax, giving it the same lifetime as the buffer
+    path: &'buf str,
+    query_string: Option<&'buf str>, //changing the references to point to buffer itself, as it's read-only.. saving extra pointers to heap!
     method: Method
 }
 
-impl TryFrom<&[u8]> for Request {
+impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {  //you don't have to mention lifetimes while calling, it stays here as metadata
     type Error = ParseError;
 
     //GET /search?field=ahg HTTP/1.1\r\n...HEADERS...   we're looking to parse such format of the request
-    fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(buf: &'buf [u8]) -> Result<Request<'buf>, Self::Error> {
         let request = str::from_utf8(buf)?; //? will return request if ok but will return utf error on Err, but Error is mentioned as ParseError, so it will look at From impl to convert it
         
         let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
@@ -31,12 +31,12 @@ impl TryFrom<&[u8]> for Request {
         let mut query_string = None;
 
         if let Some(i) = path.find('?') {
-            query_string = Some(path[i+1..].to_string());
+            query_string = Some(&path[i+1..]);
             path = &path[..i];
         }
         
         Ok(Self {
-            path: path.to_string(),
+            path,
             query_string,
             method
         })
