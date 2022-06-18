@@ -1,6 +1,6 @@
+use crate::http::Request;
 use std::net::TcpListener;
 use std::io::Read;
-use crate::http::Request;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 
@@ -29,7 +29,9 @@ impl HttpServer {
                             println!("Received a request: {}", String::from_utf8_lossy(&buffer));
 
                             match Request::try_from(&buffer[..]){   //or it can be like &buffer as &[u8], that will simply convert. [..] this is essentially slice with no bounds, so byte slice that contains whole array
-                                Ok(request) => {},
+                                Ok(request) => {
+                                    dbg!(request);
+                                },
                                 Err(e) => println!("Failed to parse the request: {}", e)
                             } 
                         },

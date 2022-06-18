@@ -1,3 +1,5 @@
+#![allow(dead_code)]    //silence the compiler warnings
+
 use server::HttpServer;
 use http::Request;
 use http::Method;
