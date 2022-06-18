@@ -1,8 +1,7 @@
-use crate::http::Request;
+use crate::http::{Request, Response, StatusCode};
 use std::net::TcpListener;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::convert::TryFrom;
-use std::convert::TryInto;
 
 pub struct HttpServer {
     address: String
@@ -22,15 +21,17 @@ impl HttpServer {
     
         loop {  //special type for infinite loop
             match listener.accept() {
-                Ok(mut tuple) => {
+                Ok((mut stream, _)) => {
                     let mut buffer = [0; 1024];
-                    match tuple.0.read(&mut buffer) {
+                    match stream.read(&mut buffer) {
                         Ok(_) => {
                             println!("Received a request: {}", String::from_utf8_lossy(&buffer));
 
                             match Request::try_from(&buffer[..]){   //or it can be like &buffer as &[u8], that will simply convert. [..] this is essentially slice with no bounds, so byte slice that contains whole array
                                 Ok(request) => {
                                     dbg!(request);
+                                    let response = Response::new(StatusCode::Ok, Some("<h1>Basic HTML Text</h1>".to_string()));
+                                    write!(stream, "{}", response);
                                 },
                                 Err(e) => println!("Failed to parse the request: {}", e)
                             } 
