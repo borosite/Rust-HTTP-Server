@@ -1,4 +1,8 @@
 use std::net::TcpListener;
+use std::io::Read;
+use crate::http::Request;
+use std::convert::TryFrom;
+use std::convert::TryInto;
 
 pub struct HttpServer {
     address: String
@@ -15,5 +19,27 @@ impl HttpServer {
         println!("Running on {}", self.address);
 
         let listener = TcpListener::bind(&self.address).unwrap(); //failing a bind is a recoverable error, but we want to stop our program if the address is already being used. Unwrap does that for you, makes this unrecoverable if in case of an error.
+    
+        loop {  //special type for infinite loop
+            match listener.accept() {
+                Ok(mut tuple) => {
+                    let mut buffer = [0; 1024];
+                    match tuple.0.read(&mut buffer) {
+                        Ok(_) => {
+                            println!("Received a request: {}", String::from_utf8_lossy(&buffer));
+
+                            match Request::try_from(&buffer[..]){   //or it can be like &buffer as &[u8], that will simply convert. [..] this is essentially slice with no bounds, so byte slice that contains whole array
+                                Ok(request) => {},
+                                Err(e) => println!("Failed to parse the request: {}", e)
+                            } 
+                        },
+                        Err(_) => {println!("Failed to read from buffer")}
+                    }
+                },
+                Err(e) => {
+                    println!("Failed to accept!: {}", e);
+                }
+            }
+        }
     }
 }
